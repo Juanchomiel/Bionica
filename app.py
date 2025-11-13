@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from datetime import datetime
 from influxdb_client import InfluxDBClient, Point, WritePrecision
+from influxdb_client.client.write_api import SYNCHRONOUS
 import os
 
 app = Flask(__name__)
@@ -15,7 +16,7 @@ if not all([token, org, bucket, url]):
     raise RuntimeError("Faltan variables de entorno: INFLUX_TOKEN/INFLUX_ORG/INFLUX_BUCKET/INFLUX_URL")
 
 client = InfluxDBClient(url=url, token=token, org=org)
-from influxdb_client.client.write_api import SYNCHRONOUS
+
 write_api = client.write_api(write_options=SYNCHRONOUS)
 
 @app.route("/health", methods=["GET"])
