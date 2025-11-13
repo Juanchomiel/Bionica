@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify
 from datetime import datetime
 from influxdb_client import InfluxDBClient, Point, WritePrecision
-from influxdb_client.client.write_api import SYNCHRONOUS
 import os
 
 app = Flask(__name__)
@@ -17,7 +16,7 @@ if not all([token, org, bucket, url]):
 
 client = InfluxDBClient(url=url, token=token, org=org)
 
-write_api = client.write_api(write_options=SYNCHRONOUS)
+write_api = client.write_api()
 
 @app.route("/health", methods=["GET"])
 def health():
