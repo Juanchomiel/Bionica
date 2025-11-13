@@ -5,50 +5,59 @@ import os
 
 app = Flask(__name__)
 
-# Leer configuración desde variables de entorno
+# ===========================
+# Variables de entorno Render
+# ===========================
 token = os.environ.get("INFLUX_TOKEN")
 org = os.environ.get("INFLUX_ORG")
 bucket = os.environ.get("INFLUX_BUCKET")
-url = os.environ.get("INFLUX_URL")  # ejemplo: https://us-east-1-1.aws.cloud2.influxdata.com
+url = os.environ.get("INFLUX_URL")
 
-if not all([token, org, bucket, url]):
-    raise RuntimeError("Faltan variables de entorno: INFLUX_TOKEN/INFLUX_ORG/INFLUX_BUCKET/INFLUX_URL")
+print("=== VARIABLES DE ENTORNO ===")
+print("URL:", url)
+print("ORG:", org)
+print("BUCKET:", bucket)
+print("TOKEN existe:", token is not None)
 
+# Cliente Influx
 client = InfluxDBClient(url=url, token=token, org=org)
 write_api = client.write_api()
 
-@app.route("/health", methods=["GET"])
-def health():
-    return jsonify({"status":"ok"}), 200
+@app.route("/", methods=["GET"])
+def home():
+    return "Servidor funcionando", 200
 
-@app.route("/data", methods=["POST"])
-def recibir_datos():
+@app.route("/test", methods=["POST"])
+def test():
+    """
+    Recibe un solo valor 'valor' y lo guarda en InfluxDB.
+    """
     try:
-        data = request.get_json(force=True)
-        servoF = float(data.get("servoF", 0))
-        servoE = float(data.get("servoE", 0))
-        xe = float(data.get("xe", 0))
-        xe2 = float(data.get("xe2", 0))
+        data = request.get_json()
 
-        point = (
-            Point("sensores")
-            .tag("dispositivo", "ESP32")
-            .field("servoF", servoF)
-            .field("servoE", servoE)
-            .field("Xe", xe)
-            .field("Xe2", xe2)
+        if not data or "valor" not in data:
+            return jsonify({"error": "JSON debe contener 'valor'"}), 400
+
+        valor = float(data["valor"])
+
+        # Crear punto
+        p = (
+            Point("test_measurement")
+            .field("valor", valor)
             .time(datetime.utcnow(), WritePrecision.NS)
         )
 
-        write_api.write(bucket=bucket, org=org, record=point)
-        print("✅ Dato enviado a InfluxDB:", data)  # <-- AGREGAR ESTO
-        return jsonify({"status": "ok", "message": "Dato guardado"}), 200
+        write_api.write(bucket=bucket, org=org, record=p)
+
+        print("Dato enviado a Influx:", data)
+
+        return jsonify({"status": "ok", "enviado": valor}), 200
 
     except Exception as e:
-        print("❌ Error al guardar en InfluxDB:", str(e))  # <-- AGREGAR ESTO
-        return jsonify({"status": "error", "message": str(e)}), 400
+        print("ERROR Influx:", e)
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 
+# Ejecutar
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
-
