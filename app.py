@@ -15,7 +15,8 @@ if not all([token, org, bucket, url]):
     raise RuntimeError("Faltan variables de entorno: INFLUX_TOKEN/INFLUX_ORG/INFLUX_BUCKET/INFLUX_URL")
 
 client = InfluxDBClient(url=url, token=token, org=org)
-write_api = client.write_api()
+from influxdb_client.client.write_api import SYNCHRONOUS
+write_api = client.write_api(write_options=SYNCHRONOUS)
 
 @app.route("/health", methods=["GET"])
 def health():
