@@ -25,7 +25,6 @@ def health():
 def recibir_datos():
     try:
         data = request.get_json(force=True)
-        # Extraer campos (asegúrate que el ESP envíe estos nombres)
         servoF = float(data.get("servoF", 0))
         servoE = float(data.get("servoE", 0))
         xe = float(data.get("xe", 0))
@@ -42,10 +41,13 @@ def recibir_datos():
         )
 
         write_api.write(bucket=bucket, org=org, record=point)
-        return jsonify({"status":"ok", "message":"Dato guardado"}), 200
+        print("✅ Dato enviado a InfluxDB:", data)  # <-- AGREGAR ESTO
+        return jsonify({"status": "ok", "message": "Dato guardado"}), 200
 
     except Exception as e:
-        return jsonify({"status":"error", "message": str(e)}), 400
+        print("❌ Error al guardar en InfluxDB:", str(e))  # <-- AGREGAR ESTO
+        return jsonify({"status": "error", "message": str(e)}), 400
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
