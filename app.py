@@ -29,24 +29,23 @@ def sensordata():
 
         print("📥 Datos recibidos desde ESP32:", data)
 
-        # Validación
-        if not data:
-            print("❌ Error: No se recibió JSON")
-            return jsonify({"status": "error", "msg": "No JSON received"}), 400
+        # Extraer valores correctos según la ESP
+        s1 = data.get("emg1")
+        s2 = data.get("emg2")
+        s3 = data.get("emg3")
 
-        # Extraer valores
-        s1 = data.get("sensor1")
-        s2 = data.get("sensor2")
-        s3 = data.get("sensor3")
+        print(f"✔ emg1={s1}, emg2={s2}, emg3={s3}")
 
-        print(f"✔ sensor1={s1}, sensor2={s2}, sensor3={s3}")
+        # Convertir a números si vienen como strings
+        s1 = float(s1)
+        s2 = float(s2)
+        s3 = float(s3)
 
-        # Crear cadena en Line Protocol
-        line = f"mioelectrico sensor1={s1},sensor2={s2},sensor3={s3}"
+        # Line protocol
+        line = f"mioelectrico emg1={s1},emg2={s2},emg3={s3}"
 
         print("📤 Enviando a InfluxDB:", line)
 
-        # Enviar a InfluxDB
         write_api.write(bucket=INFLUX_BUCKET, org=INFLUX_ORG, record=line)
 
         return jsonify({"status": "ok", "msg": "Datos guardados"}), 200
@@ -54,6 +53,7 @@ def sensordata():
     except Exception as e:
         print("🔥 ERROR EN /sensordata:", str(e))
         return jsonify({"status": "error", "msg": str(e)}), 500
+
 
 
 @app.route("/", methods=["GET"])
