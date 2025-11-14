@@ -22,35 +22,38 @@ write_api = client.write_api(write_options=WriteOptions(batch_size=1))
 # -----------------------------
 # ENDPOINT PARA ESP32
 # -----------------------------
-@app.route("/sensordata", methods=["POST"])
-def recibir_sensores():
+@app.route('/sensordata', methods=['POST'])
+def sensordata():
     try:
-        data = request.get_json(force=True)
-        
-        emg1 = float(data.get("emg1", 0))
-        emg2 = float(data.get("emg2", 0))
-        emg3 = float(data.get("emg3", 0))
+        data = request.get_json()
 
-        print("📥 Datos recibidos:", data)
+        print("📥 Datos recibidos desde ESP32:", data)
 
-        point = (
-            Point("emg")
-            .tag("device", "ESP32")
-            .field("emg1", emg1)
-            .field("emg2", emg2)
-            .field("emg3", emg3)
-            .time(datetime.utcnow(), WritePrecision.NS)
-        )
+        # Validación
+        if not data:
+            print("❌ Error: No se recibió JSON")
+            return jsonify({"status": "error", "msg": "No JSON received"}), 400
 
-        write_api.write(bucket=bucket, org=org, record=point)
-        print("✅ Guardado en InfluxDB")
+        # Extraer valores
+        s1 = data.get("sensor1")
+        s2 = data.get("sensor2")
+        s3 = data.get("sensor3")
 
-        return jsonify({"status":"ok"}), 200
+        print(f"✔ sensor1={s1}, sensor2={s2}, sensor3={s3}")
+
+        # Crear cadena en Line Protocol
+        line = f"mioelectrico sensor1={s1},sensor2={s2},sensor3={s3}"
+
+        print("📤 Enviando a InfluxDB:", line)
+
+        # Enviar a InfluxDB
+        write_api.write(bucket=INFLUX_BUCKET, org=INFLUX_ORG, record=line)
+
+        return jsonify({"status": "ok", "msg": "Datos guardados"}), 200
 
     except Exception as e:
-        print("❌ ERROR:", e)
-        return jsonify({"status":"error", "message": str(e)}), 400
-
+        print("🔥 ERROR EN /sensordata:", str(e))
+        return jsonify({"status": "error", "msg": str(e)}), 500
 
 
 @app.route("/", methods=["GET"])
