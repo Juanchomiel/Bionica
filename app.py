@@ -23,21 +23,34 @@ write_api = client.write_api(write_options=WriteOptions(batch_size=1))
 # ENDPOINT PARA ESP32
 # -----------------------------
 @app.route("/sensordata", methods=["POST"])
-def sensordata():
-    data = request.json
-    valor = data.get("valor")
-
+def recibir_sensores():
     try:
-        p = (
-            Point("prueba_esp")   
-            .field("valor", float(valor))
-        )
-        write_api.write(bucket=INFLUX_BUCKET, org=INFLUX_ORG, record=p)
+        data = request.get_json(force=True)
+        
+        emg1 = float(data.get("emg1", 0))
+        emg2 = float(data.get("emg2", 0))
+        emg3 = float(data.get("emg3", 0))
 
-        return jsonify({"status": "OK", "valor": valor}), 200
+        print("📥 Datos recibidos:", data)
+
+        point = (
+            Point("emg")
+            .tag("device", "ESP32")
+            .field("emg1", emg1)
+            .field("emg2", emg2)
+            .field("emg3", emg3)
+            .time(datetime.utcnow(), WritePrecision.NS)
+        )
+
+        write_api.write(bucket=bucket, org=org, record=point)
+        print("✅ Guardado en InfluxDB")
+
+        return jsonify({"status":"ok"}), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print("❌ ERROR:", e)
+        return jsonify({"status":"error", "message": str(e)}), 400
+
 
 
 @app.route("/", methods=["GET"])
