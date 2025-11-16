@@ -25,9 +25,12 @@ write_api = client.write_api(write_options=WriteOptions(batch_size=1))
 @app.route('/sensordata', methods=['POST'])
 def sensordata():
     try:
-        data = request.get_json()
+        print("🔍 request.data:", request.data)
+        print("🔍 request.headers:", request.headers)
 
-        print("📥 Datos recibidos desde ESP32:", data)
+        data = request.get_json()
+        print("📥 JSON decodificado:", data)
+
 
         # Extraer valores correctos según la ESP
         s1 = float(data.get("emg1"))
