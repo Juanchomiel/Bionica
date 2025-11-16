@@ -30,16 +30,11 @@ def sensordata():
         print("📥 Datos recibidos desde ESP32:", data)
 
         # Extraer valores correctos según la ESP
-        s1 = data.get("emg1")
-        s2 = data.get("emg2")
-        s3 = data.get("emg3")
+        s1 = float(data.get("emg1"))
+        s2 = float(data.get("emg2"))
+        s3 = float(data.get("emg3"))
 
         print(f"✔ emg1={s1}, emg2={s2}, emg3={s3}")
-
-        # Convertir a números si vienen como strings
-        s1 = float(s1)
-        s2 = float(s2)
-        s3 = float(s3)
 
         # Line protocol
         line = f"mioelectrico emg1={s1},emg2={s2},emg3={s3}"
@@ -55,11 +50,15 @@ def sensordata():
         return jsonify({"status": "error", "msg": str(e)}), 500
 
 
-
 @app.route("/", methods=["GET"])
 def home():
     return "Servidor funcionando", 200
 
 
+# -----------------------------
+# SERVIDOR COMPATIBLE CON RENDER
+# -----------------------------
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    PORT = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=PORT)
+
